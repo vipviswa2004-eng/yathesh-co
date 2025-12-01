@@ -76,8 +76,10 @@ export interface Order {
 export type AdminRole = 'Super Admin' | 'Product Manager' | 'Order Manager' | 'Inventory Operator' | 'Finance Manager' | 'Customer Support' | 'Support Agent';
 
 export interface User {
+  id: string;
   email: string;
-  isAdmin: boolean;
+  name: string;
+  isAdmin?: boolean;
   role?: AdminRole;
 }
 

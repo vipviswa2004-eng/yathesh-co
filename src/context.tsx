@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, User, Product } from './types';
-import { products as localProducts } from './data/products';
+import { supabase } from './integrations/supabase/client';
+import { useSupabaseAuth } from './hooks/useSupabaseAuth';
 
 interface AppContextType {
   cart: CartItem[];
@@ -25,82 +26,198 @@ export const useCart = () => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user: authUser } = useSupabaseAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
-  const [user, setUserState] = useState<User | null>(null);
-  const [products] = useState<Product[]>(localProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [currency] = useState<'INR' | 'USD'>('INR');
   const [isGiftAdvisorOpen, setIsGiftAdvisorOpen] = useState(false);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error('Failed to parse cart', e);
-      }
-    }
-    
-    const savedWish = localStorage.getItem('wishlist');
-    if (savedWish) {
-      try {
-        setWishlist(JSON.parse(savedWish));
-      } catch (e) {
-        console.error('Failed to parse wishlist', e);
-      }
-    }
+  const user: User | null = authUser ? {
+    id: authUser.id,
+    email: authUser.email!,
+    name: authUser.user_metadata?.name || authUser.email!.split('@')[0]
+  } : null;
 
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUserState(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Failed to parse user', e);
+  // Load products from Supabase
+  useEffect(() => {
+    const loadProducts = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+      
+      if (error) {
+        console.error('Error loading products:', error);
+        return;
       }
-    }
+      
+      if (data) {
+        setProducts(data as Product[]);
+      }
+    };
+
+    loadProducts();
   }, []);
 
-  // Save cart to localStorage
+  // Load cart from Supabase when user logs in
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-
-  // Save wishlist to localStorage
-  useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishlist));
-  }, [wishlist]);
-
-  // Save user to localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
+    if (!authUser) {
+      setCart([]);
+      return;
     }
-  }, [user]);
 
-  const setUser = (newUser: User | null) => {
-    setUserState(newUser);
+    const loadCart = async () => {
+      const { data, error } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('user_id', authUser.id);
+      
+      if (error) {
+        console.error('Error loading cart:', error);
+        return;
+      }
+      
+      if (data) {
+        const cartItems: CartItem[] = data.map(item => {
+          const product = products.find(p => p.id === item.product_id);
+          if (!product) return null;
+          
+          return {
+            ...product,
+            cartId: item.id,
+            quantity: item.quantity,
+            customName: item.custom_name || '',
+            customImage: item.custom_image,
+            selectedVariations: item.selected_variations,
+            extraHeads: item.extra_heads || 0,
+            calculatedPrice: Number(item.calculated_price),
+            originalPrice: product.pdfPrice
+          };
+        }).filter(Boolean) as CartItem[];
+        setCart(cartItems);
+      }
+    };
+
+    loadCart();
+  }, [authUser, products]);
+
+  // Load wishlist from Supabase when user logs in
+  useEffect(() => {
+    if (!authUser) {
+      setWishlist([]);
+      return;
+    }
+
+    const loadWishlist = async () => {
+      const { data, error } = await supabase
+        .from('wishlist_items')
+        .select('product_id')
+        .eq('user_id', authUser.id);
+      
+      if (error) {
+        console.error('Error loading wishlist:', error);
+        return;
+      }
+      
+      if (data) {
+        const wishlistProducts = products.filter(p => 
+          data.some(w => w.product_id === p.id)
+        );
+        setWishlist(wishlistProducts);
+      }
+    };
+
+    loadWishlist();
+  }, [authUser, products]);
+
+  const addToCart = async (item: CartItem) => {
+    if (!authUser) {
+      console.error('User must be logged in to add to cart');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('cart_items')
+      .insert({
+        user_id: authUser.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        custom_name: item.customName,
+        custom_image: item.customImage,
+        selected_variations: item.selectedVariations,
+        extra_heads: item.extraHeads,
+        calculated_price: item.calculatedPrice
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding to cart:', error);
+      return;
+    }
+
+    if (data) {
+      setCart(prev => [...prev, { ...item, cartId: data.id }]);
+    }
   };
 
-  const addToCart = (item: CartItem) => {
-    setCart(prev => [...prev, item]);
-  };
+  const removeFromCart = async (cartId: string) => {
+    if (!authUser) return;
 
-  const removeFromCart = (cartId: string) => {
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('id', cartId);
+
+    if (error) {
+      console.error('Error removing from cart:', error);
+      return;
+    }
+
     setCart(prev => prev.filter(item => item.cartId !== cartId));
   };
 
-  const toggleWishlist = (product: Product) => {
-    setWishlist(prev => {
-      const exists = prev.find(p => p.id === product.id);
-      if (exists) {
-        return prev.filter(p => p.id !== product.id);
+  const toggleWishlist = async (product: Product) => {
+    if (!authUser) {
+      console.error('User must be logged in to manage wishlist');
+      return;
+    }
+
+    const exists = wishlist.find(p => p.id === product.id);
+
+    if (exists) {
+      const { error } = await supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('user_id', authUser.id)
+        .eq('product_id', product.id);
+
+      if (error) {
+        console.error('Error removing from wishlist:', error);
+        return;
       }
-      return [...prev, product];
-    });
+
+      setWishlist(prev => prev.filter(p => p.id !== product.id));
+    } else {
+      const { error } = await supabase
+        .from('wishlist_items')
+        .insert({
+          user_id: authUser.id,
+          product_id: product.id
+        });
+
+      if (error) {
+        console.error('Error adding to wishlist:', error);
+        return;
+      }
+
+      setWishlist(prev => [...prev, product]);
+    }
+  };
+
+  const setUser = (newUser: User | null) => {
+    // This is now handled by Supabase auth
+    console.warn('setUser is deprecated, use Supabase auth instead');
   };
 
   return (

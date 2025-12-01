@@ -4,6 +4,7 @@ import { ShoppingCart, User, Menu, X, Sparkles, LogIn, LogOut, ShieldCheck, User
 import { useCart } from '../context';
 import { products } from '../data/products';
 import { Product, ADMIN_EMAILS } from '../types';
+import { supabase } from '../integrations/supabase/client';
 
 export const Navbar: React.FC = () => {
   const { cart, wishlist, user, setUser, setIsGiftAdvisorOpen } = useCart();
@@ -65,17 +66,51 @@ export const Navbar: React.FC = () => {
       localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
     const email = emailInput.trim().toLowerCase();
-    const isAdmin = ADMIN_EMAILS.some(adminEmail => adminEmail.toLowerCase() === email);
-    setUser({ email, isAdmin });
+    
+    // Simple password for demo - in production, use proper auth
+    const password = 'demo123';
+    
+    if (authMode === 'register') {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        alert(error.message);
+        return;
+      }
+      
+      alert('Please check your email to confirm your account!');
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        alert(error.message);
+        return;
+      }
+    }
+    
     setIsLoginModalOpen(false);
     setEmailInput('');
   };
 
-  const handleLogout = () => { setUser(null); setIsLoginModalOpen(false); };
+  const handleLogout = async () => { 
+    await supabase.auth.signOut();
+    setIsLoginModalOpen(false); 
+  };
   const openLoginModal = () => { setIsMenuOpen(false); setIsLoginModalOpen(true); setAuthMode('login'); setEmailInput(''); };
   const toggleAuthMode = () => { setAuthMode(prev => prev === 'login' ? 'register' : 'login'); setEmailInput(''); };
   
