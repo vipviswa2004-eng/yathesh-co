@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { products, calculatePrice } from '../data/products';
+import { calculatePrice } from '../data/products';
 import { useCart } from '../context';
 import { VariationOption } from '../types';
 import { Camera, Type, Wand2, Plus, Minus, ShoppingCart, Zap, Loader2, CheckCircle, RefreshCcw, Sparkles, Share2, Heart, ArrowLeft, Facebook, Twitter, MessageCircle } from 'lucide-react';
-import { generateSwapPreview } from '../services/gemini'; // Corrected path
+import { generateSwapPreview } from '../services/gemini';
 
 export const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, currency, wishlist, toggleWishlist } = useCart();
+  const { addToCart, currency, wishlist, toggleWishlist, products, loading } = useCart();
   
-  const product = products.find(p => p.id === id);
+  const product = products.find(p => p.id === id || p.code === id);
   const [customName, setCustomName] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [extraHeads, setExtraHeads] = useState(0);
@@ -37,6 +37,14 @@ export const ProductDetails: React.FC = () => {
         setDisplayImage(product.image);
     }
   }, [product]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!product) return <div className="p-10 text-center text-gray-500">Product not found</div>;
 

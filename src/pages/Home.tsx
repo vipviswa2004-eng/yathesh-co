@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { products, calculatePrice } from '../data/products';
+import { calculatePrice } from '../data/products';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context';
 import { Star, ChevronLeft, ChevronRight, Gift, Truck, ShieldCheck, Heart, Zap, User, Briefcase, Sparkles } from 'lucide-react';
@@ -50,7 +50,7 @@ const HERO_SLIDES = [
 ];
 
 export const Home: React.FC = () => {
-  const { currency, wishlist, toggleWishlist, setIsGiftAdvisorOpen } = useCart();
+  const { currency, wishlist, toggleWishlist, setIsGiftAdvisorOpen, products, loading } = useCart();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {

@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { products, calculatePrice } from '../data/products';
-import { useCart } from '../context'; // Updated import
-import { Star, Heart, Search, Filter, ChevronDown, SlidersHorizontal, Gift } from 'lucide-react';
+import { calculatePrice } from '../data/products';
+import { useCart } from '../context';
+import { Star, Heart, Search, Filter, ChevronDown, SlidersHorizontal, Gift, Loader2 } from 'lucide-react';
 
 const OCCASIONS = [
     "Birthday",
@@ -15,7 +15,7 @@ const OCCASIONS = [
 ];
 
 export const Shop: React.FC = () => {
-  const { currency, wishlist, toggleWishlist } = useCart();
+  const { currency, wishlist, toggleWishlist, products, loading } = useCart();
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   
@@ -74,6 +74,17 @@ export const Shop: React.FC = () => {
       e.stopPropagation();
       toggleWishlist(product);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-500">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
