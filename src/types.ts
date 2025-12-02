@@ -1,24 +1,24 @@
 
 export enum Shape {
-  RECTANGLE = 'RECTANGLE',
-  SQUARE = 'SQUARE',
-  ROUND = 'ROUND',
-  HEART = 'HEART',
-  OTHER = 'OTHER',
-  CUSTOM = 'CUSTOM'
+  RECTANGLE = 'Rectangle',
+  SQUARE = 'Square',
+  ROUND = 'Round',
+  HEART = 'Heart',
+  OTHER = 'Other',
+  CUSTOM = 'Custom'
 }
 
 export interface VariationOption {
   id: string;
-  label: string; // e.g., "Small", "Red", "Heart"
-  description?: string; // e.g. "10x10cm", "Premium Wood"
-  priceAdjustment: number; // Added to the base PDF price
-  image?: string; // Specific image for this variation option
+  label: string;
+  description?: string;
+  priceAdjustment: number;
+  image?: string;
 }
 
 export interface Variation {
   id: string;
-  name: string; // e.g. "Size", "Color", "Shape"
+  name: string;
   options: VariationOption[];
 }
 
@@ -29,19 +29,28 @@ export interface Product {
   code: string;
   name: string;
   category: string;
-  pdfPrice: number;
-  shape: Shape;
-  customShapeName?: string; // Used when shape is CUSTOM
-  customShapeCost?: number; // Used when shape is CUSTOM
-  image: string;
+  sku?: string;
   description: string;
+  base_price: number;
+  gst_price?: number;
+  pdfPrice: number; // Alias for base_price for backwards compatibility
+  shape: Shape | string;
+  customShapeName?: string;
+  customShapeCost?: number;
+  custom_shape_cost?: number;
+  image: string; // Primary image (first from images array)
+  images?: string[];
   size?: string;
-  discount?: number; // Percentage (e.g., 35)
-  allowsExtraHeads?: boolean; 
+  discount?: number;
+  allowsExtraHeads?: boolean;
+  allows_extra_heads?: boolean;
   variations?: Variation[];
   stock?: number;
-  sku?: string;
   status?: ProductStatus;
+  is_personalized?: boolean;
+  rating?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CartItem extends Product {
@@ -51,8 +60,8 @@ export interface CartItem extends Product {
   calculatedPrice: number;
   originalPrice: number;
   quantity: number;
-  extraHeads?: number; // Number of additional heads added
-  selectedVariations?: Record<string, VariationOption>; // variationId -> selectedOption
+  extraHeads?: number;
+  selectedVariations?: Record<string, VariationOption>;
 }
 
 export type OrderStatus = 'Pending' | 'Processing' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Returned' | 'Refunded';
@@ -79,6 +88,8 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  display_name?: string;
+  image?: string;
   isAdmin?: boolean;
   role?: AdminRole;
 }
@@ -166,4 +177,3 @@ export const WHATSAPP_NUMBERS = [
   "9342310194",
   "6380016798"
 ];
-

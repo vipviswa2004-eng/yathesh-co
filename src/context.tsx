@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CartItem, User, Product } from './types';
+import { CartItem, User, Product, Shape } from './types';
 import { supabase } from './integrations/supabase/client';
 import { useSupabaseAuth } from './hooks/useSupabaseAuth';
 
@@ -15,6 +15,7 @@ interface AppContextType {
   isGiftAdvisorOpen: boolean;
   setIsGiftAdvisorOpen: React.Dispatch<React.SetStateAction<boolean>>;
   products: Product[];
+  loading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -25,35 +26,74 @@ export const useCart = () => {
   return context;
 };
 
+// Map Supabase product to frontend Product interface
+const mapSupabaseProduct = (item: any): Product => {
+  return {
+    id: item.id,
+    code: item.code || item.id,
+    name: item.name,
+    category: item.category || 'Uncategorized',
+    sku: item.sku,
+    description: item.description || '',
+    base_price: Number(item.base_price) || 0,
+    gst_price: item.gst_price ? Number(item.gst_price) : undefined,
+    pdfPrice: Number(item.base_price) || 0, // backwards compatibility
+    shape: item.shape || Shape.RECTANGLE,
+    customShapeCost: item.custom_shape_cost ? Number(item.custom_shape_cost) : 0,
+    custom_shape_cost: item.custom_shape_cost ? Number(item.custom_shape_cost) : 0,
+    image: item.images?.[0] || 'https://via.placeholder.com/400',
+    images: item.images || [],
+    size: item.size,
+    discount: 35, // default discount
+    allowsExtraHeads: item.allows_extra_heads || false,
+    allows_extra_heads: item.allows_extra_heads || false,
+    variations: item.variations || [],
+    stock: item.stock || 0,
+    status: item.status || 'Active',
+    is_personalized: item.is_personalized || false,
+    rating: item.rating ? Number(item.rating) : 0,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  };
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user: authUser } = useSupabaseAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currency] = useState<'INR' | 'USD'>('INR');
   const [isGiftAdvisorOpen, setIsGiftAdvisorOpen] = useState(false);
 
   const user: User | null = authUser ? {
     id: authUser.id,
     email: authUser.email!,
-    name: authUser.user_metadata?.name || authUser.email!.split('@')[0]
+    name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email!.split('@')[0],
+    display_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name,
+    image: authUser.user_metadata?.avatar_url,
   } : null;
 
   // Load products from Supabase
   useEffect(() => {
     const loadProducts = async () => {
+      setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('*');
+        .select('*')
+        .eq('status', 'Active');
       
       if (error) {
         console.error('Error loading products:', error);
+        setLoading(false);
         return;
       }
       
       if (data) {
-        setProducts(data as Product[]);
+        const mappedProducts = data.map(mapSupabaseProduct);
+        setProducts(mappedProducts);
       }
+      setLoading(false);
     };
 
     loadProducts();
@@ -77,7 +117,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      if (data) {
+      if (data && products.length > 0) {
         const cartItems: CartItem[] = data.map(item => {
           const product = products.find(p => p.id === item.product_id);
           if (!product) return null;
@@ -85,13 +125,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {
             ...product,
             cartId: item.id,
-            quantity: item.quantity,
-            customName: item.custom_name || '',
-            customImage: item.custom_image,
-            selectedVariations: item.selected_variations,
-            extraHeads: item.extra_heads || 0,
-            calculatedPrice: Number(item.calculated_price),
-            originalPrice: product.pdfPrice
+            quantity: item.quantity || 1,
+            customName: item.customization?.custom_name || '',
+            customImage: item.customization?.custom_image,
+            selectedVariations: item.customization?.selected_variations,
+            extraHeads: item.customization?.extra_heads || 0,
+            calculatedPrice: product.pdfPrice,
+            originalPrice: product.pdfPrice * 2,
           };
         }).filter(Boolean) as CartItem[];
         setCart(cartItems);
@@ -119,7 +159,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      if (data) {
+      if (data && products.length > 0) {
         const wishlistProducts = products.filter(p => 
           data.some(w => w.product_id === p.id)
         );
@@ -142,11 +182,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user_id: authUser.id,
         product_id: item.id,
         quantity: item.quantity,
-        custom_name: item.customName,
-        custom_image: item.customImage,
-        selected_variations: item.selectedVariations,
-        extra_heads: item.extraHeads,
-        calculated_price: item.calculatedPrice
+        customization: {
+          custom_name: item.customName,
+          custom_image: item.customImage,
+          selected_variations: item.selectedVariations,
+          extra_heads: item.extraHeads,
+        }
       })
       .select()
       .single();
@@ -216,7 +257,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setUser = (newUser: User | null) => {
-    // This is now handled by Supabase auth
     console.warn('setUser is deprecated, use Supabase auth instead');
   };
 
@@ -232,7 +272,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currency, 
       isGiftAdvisorOpen, 
       setIsGiftAdvisorOpen, 
-      products 
+      products,
+      loading 
     }}>
       {children}
     </AppContext.Provider>
