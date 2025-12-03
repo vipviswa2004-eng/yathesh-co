@@ -190,14 +190,19 @@ export const Shop: React.FC = () => {
                                         to={`/product/${product.id}`}
                                         className="bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
                                     >
-                                        <div className="relative aspect-[4/5] bg-gray-50 p-4 overflow-hidden">
+                                        <div className={`relative aspect-[4/5] bg-gray-50 p-4 overflow-hidden ${product.stock === 0 ? 'opacity-60' : ''}`}>
                                             <img 
                                                 src={product.image} 
                                                 alt={product.name} 
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" 
                                                 loading="lazy" 
                                             />
-                                            {product.discount && (
+                                            {product.stock === 0 && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                    <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1.5 rounded">OUT OF STOCK</span>
+                                                </div>
+                                            )}
+                                            {product.discount && product.stock !== 0 && (
                                                 <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
                                                     -{product.discount}%
                                                 </div>
@@ -216,9 +221,11 @@ export const Shop: React.FC = () => {
                                                     <span className="text-xs text-gray-400 line-through">{formatPrice(prices.original)}</span>
                                                     <span className="text-base font-bold text-gray-900">{formatPrice(prices.final)}</span>
                                                 </div>
-                                                {product.stock && product.stock < 10 && (
+                                                {product.stock === 0 ? (
+                                                    <span className="text-[10px] text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded font-medium">Out of Stock</span>
+                                                ) : product.stock && product.stock < 10 ? (
                                                     <span className="text-[10px] text-red-600 bg-red-50 px-1.5 py-0.5 rounded font-medium">Only {product.stock} left</span>
-                                                )}
+                                                ) : null}
                                             </div>
                                         </div>
                                     </Link>
