@@ -5,6 +5,7 @@ import { useCart } from '../context';
 import { VariationOption } from '../types';
 import { Camera, Type, Wand2, Plus, Minus, ShoppingCart, Zap, Loader2, CheckCircle, RefreshCcw, Sparkles, Share2, Heart, ArrowLeft, Facebook, Twitter, MessageCircle } from 'lucide-react';
 import { generateSwapPreview } from '../services/gemini';
+import { ProductRating } from '../components/ProductRating';
 
 export const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -124,6 +125,9 @@ export const ProductDetails: React.FC = () => {
                     </div>
                     <div className="mt-3 flex items-baseline gap-3">
                         <p className="text-3xl font-bold text-gray-900">{formatPrice(prices.final)}</p><p className="text-sm text-gray-500 line-through">{formatPrice(prices.original)}</p><span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">{product.discount || 35}% OFF</span>
+                    </div>
+                    <div className="mt-4">
+                        <ProductRating productId={product.id} />
                     </div>
                     <div className="flex items-center gap-3 mt-4">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Share:</span>
