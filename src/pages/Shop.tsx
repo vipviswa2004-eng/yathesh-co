@@ -27,7 +27,7 @@ export const Shop: React.FC = () => {
 
   const categories = useMemo(() => {
       return Array.from(new Set(products.map(p => p.category)));
-  }, []);
+  }, [products]);
 
   const formatPrice = (price: number) => {
     return currency === 'INR' 
@@ -59,7 +59,7 @@ export const Shop: React.FC = () => {
               default: return 0; 
           }
       });
-  }, [initialQuery, selectedCategories, selectedOccasions, priceRange, sortBy]);
+  }, [products, initialQuery, selectedCategories, selectedOccasions, priceRange, sortBy]);
 
   const toggleCategory = (cat: string) => {
       setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);

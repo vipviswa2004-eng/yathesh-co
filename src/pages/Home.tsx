@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { calculatePrice } from '../data/products';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context';
-import { Star, ChevronLeft, ChevronRight, Gift, Truck, ShieldCheck, Heart, Zap, User, Briefcase, Sparkles } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Gift, Truck, ShieldCheck, Heart, Zap, User, Briefcase, Sparkles, Database } from 'lucide-react';
+import { seedProducts, seedCategories } from '../data/seedProducts';
 
 const CATEGORIES = [
   { id: '3d-crystal', name: '3D Crystals', image: 'src/assets/heart-shaped_3D.png' },
@@ -50,8 +51,18 @@ const HERO_SLIDES = [
 ];
 
 export const Home: React.FC = () => {
-  const { currency, wishlist, toggleWishlist, setIsGiftAdvisorOpen, products, loading } = useCart();
+  const { currency, wishlist, toggleWishlist, setIsGiftAdvisorOpen, products, loading, user } = useCart();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [seeding, setSeeding] = useState(false);
+
+  const handleSeedData = async () => {
+    setSeeding(true);
+    await seedCategories();
+    const result = await seedProducts();
+    alert(result.message || result.error || 'Done');
+    setSeeding(false);
+    window.location.reload();
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -212,8 +223,7 @@ export const Home: React.FC = () => {
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">{product.category}</p>
                             <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 group-hover:text-primary transition-colors h-10 leading-5">{product.name}</h3>
                             <div className="flex items-center gap-1 mt-1.5">
-                                <div className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">4.8 <Star className="w-2 h-2 fill-current" /></div>
-                                <span className="text-[10px] text-gray-400">(1.2k)</span>
+                                <div className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">{product.rating || 0} <Star className="w-2 h-2 fill-current" /></div>
                             </div>
                         </div>
 
@@ -239,6 +249,20 @@ export const Home: React.FC = () => {
             <Link to="/products" className="inline-block border border-gray-300 bg-white text-gray-800 px-8 py-3 rounded-full font-bold text-sm shadow-sm">Browse All Products</Link>
         </div>
       </div>
+
+      {/* Admin Seed Button */}
+      {user?.isAdmin && products.length === 0 && (
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <button 
+            onClick={handleSeedData} 
+            disabled={seeding}
+            className="bg-primary text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50"
+          >
+            <Database className="w-5 h-5" />
+            {seeding ? 'Seeding...' : 'Seed Sample Products'}
+          </button>
+        </div>
+      )}
 
       {/* Corporate Banner */}
       <div className="bg-gray-900 py-12 mt-8">
