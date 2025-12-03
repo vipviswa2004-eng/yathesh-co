@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, Menu, X, Sparkles, LogIn, LogOut, ShieldCheck, UserPlus, Search, Clock, ArrowUpRight, Gift, Heart } from 'lucide-react';
 import { useCart } from '../context';
-import { products } from '../data/products';
 import { Product, ADMIN_EMAILS } from '../types';
 import { supabase } from '../integrations/supabase/client';
 
 export const Navbar: React.FC = () => {
-  const { cart, wishlist, user, setUser, setIsGiftAdvisorOpen } = useCart();
+  const { cart, wishlist, user, setUser, setIsGiftAdvisorOpen, products } = useCart();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -57,7 +56,7 @@ export const Navbar: React.FC = () => {
           setSuggestions([]);
           setShowSuggestions(true);
       }
-  }, [searchQuery]);
+  }, [searchQuery, products]);
 
   const saveRecentSearch = (term: string) => {
       if (!term.trim()) return;

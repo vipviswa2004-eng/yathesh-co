@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, User, Product, Shape } from './types';
 import { supabase } from './integrations/supabase/client';
 import { useSupabaseAuth } from './hooks/useSupabaseAuth';
+import { toast } from 'sonner';
 
 interface AppContextType {
   cart: CartItem[];
@@ -172,7 +173,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = async (item: CartItem) => {
     if (!authUser) {
-      console.error('User must be logged in to add to cart');
+      toast.error('Please login to add items to cart');
       return;
     }
 
@@ -193,12 +194,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .single();
 
     if (error) {
+      if (error.code === '23505') {
+        toast.error('Item already in cart');
+      } else {
+        toast.error('Failed to add to cart');
+      }
       console.error('Error adding to cart:', error);
       return;
     }
 
     if (data) {
       setCart(prev => [...prev, { ...item, cartId: data.id }]);
+      toast.success('Added to cart!');
     }
   };
 
@@ -220,7 +227,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleWishlist = async (product: Product) => {
     if (!authUser) {
-      console.error('User must be logged in to manage wishlist');
+      toast.error('Please login to save to wishlist');
       return;
     }
 
@@ -234,11 +241,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('product_id', product.id);
 
       if (error) {
+        toast.error('Failed to remove from wishlist');
         console.error('Error removing from wishlist:', error);
         return;
       }
 
       setWishlist(prev => prev.filter(p => p.id !== product.id));
+      toast.success('Removed from wishlist');
     } else {
       const { error } = await supabase
         .from('wishlist_items')
@@ -248,11 +257,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
       if (error) {
+        toast.error('Failed to add to wishlist');
         console.error('Error adding to wishlist:', error);
         return;
       }
 
       setWishlist(prev => [...prev, product]);
+      toast.success('Added to wishlist!');
     }
   };
 
