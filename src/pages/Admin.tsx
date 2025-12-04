@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context';
+import { useAdminRole } from '../hooks/useAdminRole';
 import { products as initialProducts } from '../data/products';
 import { Product, Variation, VariationOption, Order, Shape, Customer, Review, Coupon, Seller, OrderStatus, Transaction, ReturnRequest, AdminRole } from '../types';
 import { generateProductImage, generateProductDescription, enhanceProductImage } from '../services/gemini';
@@ -49,6 +50,7 @@ const generateMockReviews = (): Review[] => [
 
 export const Admin: React.FC = () => {
   const { user } = useCart();
+  const { isAdmin, loading: roleLoading } = useAdminRole();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'customers' | 'sellers' | 'payments' | 'logistics' | 'returns' | 'reviews' | 'analytics' | 'coupons' | 'security' | 'settings'>('dashboard');
   
   const [productList, setProductList] = useState<Product[]>(initialProducts);
@@ -96,7 +98,11 @@ export const Admin: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  if (!user || !user.isAdmin) {
+  if (roleLoading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
+  }
+
+  if (!user || !isAdmin) {
     return <div className="min-h-screen flex items-center justify-center text-red-600 font-bold">Access Denied</div>;
   }
 
