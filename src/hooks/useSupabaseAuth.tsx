@@ -21,7 +21,7 @@ export const useSupabaseAuth = () => {
     try {
       // Query profile table joined with roles table
       const { data, error } = await supabase
-        .from('profile')
+        .from('profiles')
         .select(`
           id,
           role_id,
