@@ -89,8 +89,15 @@ export const Admin: React.FC = () => {
     }
   }, [isEditing]);
 
+  // Redirect non-admin users to home page
+  useEffect(() => {
+    if (!roleLoading && (!user || !isAdmin)) {
+      window.location.href = '/';
+    }
+  }, [roleLoading, user, isAdmin]);
+
   const filteredProducts = productList.filter(product => {
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
         product.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
         (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase().trim())) ||
         product.category.toLowerCase().includes(searchQuery.toLowerCase().trim());
@@ -101,13 +108,6 @@ export const Admin: React.FC = () => {
   if (roleLoading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
   }
-
-  // Redirect non-admin users to home page
-  useEffect(() => {
-    if (!roleLoading && (!user || !isAdmin)) {
-      window.location.href = '/';
-    }
-  }, [roleLoading, user, isAdmin]);
 
   if (!user || !isAdmin) {
     return <div className="min-h-screen flex items-center justify-center text-red-600 font-bold">Access Denied - Redirecting...</div>;
