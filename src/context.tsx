@@ -59,7 +59,6 @@ const mapSupabaseProduct = (item: any): Product => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user: authUser } = useSupabaseAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -67,12 +66,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currency] = useState<'INR' | 'USD'>('INR');
   const [isGiftAdvisorOpen, setIsGiftAdvisorOpen] = useState(false);
 
+  const { user: authUser, profile } = useSupabaseAuth();
+  
   const user: User | null = authUser ? {
     id: authUser.id,
     email: authUser.email!,
     name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email!.split('@')[0],
     display_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name,
     image: authUser.user_metadata?.avatar_url,
+    isAdmin: profile?.role_id === 1 || profile?.role_name === 'admin',
   } : null;
 
   // Load products from Supabase REST API

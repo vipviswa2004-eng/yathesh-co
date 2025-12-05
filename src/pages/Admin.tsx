@@ -102,8 +102,15 @@ export const Admin: React.FC = () => {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
   }
 
+  // Redirect non-admin users to home page
+  useEffect(() => {
+    if (!roleLoading && (!user || !isAdmin)) {
+      window.location.href = '/';
+    }
+  }, [roleLoading, user, isAdmin]);
+
   if (!user || !isAdmin) {
-    return <div className="min-h-screen flex items-center justify-center text-red-600 font-bold">Access Denied</div>;
+    return <div className="min-h-screen flex items-center justify-center text-red-600 font-bold">Access Denied - Redirecting...</div>;
   }
 
   // --- ACTIONS ---
