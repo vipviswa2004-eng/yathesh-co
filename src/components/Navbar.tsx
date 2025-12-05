@@ -66,16 +66,36 @@ export const Navbar: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
+    try {
+      setIsLoginModalOpen(false); // Close modal before redirect
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          scopes: 'email profile',
+        }
+      });
+
+      if (error) {
+        console.error('Google login error:', error);
+        alert(`Login failed: ${error.message}`);
+        setIsLoginModalOpen(true); // Reopen modal on error
+        return;
       }
-    });
-    
-    if (error) {
-      console.error('Google login error:', error);
-      alert(error.message);
+
+      if (data?.url) {
+        // Redirect will happen automatically
+        console.log('Redirecting to Google OAuth...');
+      }
+    } catch (err) {
+      console.error('Unexpected error during Google login:', err);
+      alert('An unexpected error occurred. Please try again.');
+      setIsLoginModalOpen(true);
     }
   };
 
