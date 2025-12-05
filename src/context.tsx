@@ -75,26 +75,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     image: authUser.user_metadata?.avatar_url,
   } : null;
 
-  // Load products from Supabase
+  // Load products from Supabase REST API
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'Active');
-      
-      if (error) {
-        console.error('Error loading products:', error);
-        setLoading(false);
-        return;
-      }
-      
-      if (data) {
+      try {
+        const response = await fetch('https://hybpteqmxlxqbaynihbb.supabase.co/rest/v1/products?status=eq.Active', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer sb_publishable_jjhi9VkRSRokgM9Va8CLNQ_B_ZsCl4W',
+            'apikey': 'sb_publishable_jjhi9VkRSRokgM9Va8CLNQ_B_ZsCl4W',
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
         const mappedProducts = data.map(mapSupabaseProduct);
         setProducts(mappedProducts);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     loadProducts();

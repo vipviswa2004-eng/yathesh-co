@@ -1,11 +1,7 @@
-# Google OAuth Implementation Plan
-
-## Tasks
-- [ ] Update Supabase client configuration for better OAuth handling
-- [ ] Enhance useSupabaseAuth hook for OAuth redirects and state management
-- [ ] Fix and improve Google OAuth implementation in Navbar component
-- [ ] Test OAuth flow and verify user data mapping
-
-## Progress
-- [x] Analyze current codebase and create implementation plan
-- [x] Get user approval for the plan
+- [x] Update loadProducts function in src/context.tsx to use Supabase REST API instead of client
+- [x] Test the application to ensure products load correctly
+- [x] Verify no console errors
+- [x] Add database trigger to assign default 'user' role to new users on signup
+- [x] Add error handling in App.tsx for auth errors from URL parameters
+- [ ] Apply the new migration to Supabase (run locally or push to hosted)
+- [ ] Test Google OAuth signup flow to ensure new users are saved without errors

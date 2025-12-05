@@ -14,6 +14,8 @@ import { Cart } from './pages/Cart';
 import { Admin } from './pages/Admin';
 import { Wishlist } from './pages/Wishlist';
 import NotFound from "./pages/NotFound";
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 const queryClient = new QueryClient();
 
