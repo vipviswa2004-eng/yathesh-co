@@ -141,7 +141,11 @@ export const Navbar: React.FC = () => {
   };
 
   const handleLogout = async () => { 
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     setIsLoginModalOpen(false); 
   };
   const openLoginModal = () => { setIsMenuOpen(false); setIsLoginModalOpen(true); setAuthMode('login'); setEmailInput(''); };
