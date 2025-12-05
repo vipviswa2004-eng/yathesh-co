@@ -16,25 +16,18 @@ export const useSupabaseAuth = () => {
   const [error, setError] = useState<AuthError | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Fetch user profile with role information
+  // Fetch user role from user_roles table
   const fetchUserProfile = async (userId: string, userEmail: string) => {
     try {
-      // Query profile table joined with roles table
+      // Query user_roles table for the user's role
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          role_id,
-          roles:role_id (
-            id,
-            name
-          )
-        `)
-        .eq('id', userId)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching user role:', error);
         setProfile({
           user_id: userId,
           email: userEmail,
@@ -45,21 +38,18 @@ export const useSupabaseAuth = () => {
       }
 
       if (data) {
-        // Handle the joined roles data - could be object or array depending on relationship
-        const rolesData = data.roles as unknown;
-        let roleName: string | null = null;
-        
-        if (Array.isArray(rolesData) && rolesData.length > 0) {
-          roleName = rolesData[0]?.name || null;
-        } else if (rolesData && typeof rolesData === 'object' && 'name' in rolesData) {
-          roleName = (rolesData as { name: string }).name;
-        }
+        // Map role name to role_id for backwards compatibility
+        const roleIdMap: Record<string, number> = {
+          'admin': 1,
+          'moderator': 2,
+          'user': 3,
+        };
         
         setProfile({
           user_id: userId,
           email: userEmail,
-          role_id: data.role_id,
-          role_name: roleName,
+          role_id: roleIdMap[data.role] || null,
+          role_name: data.role,
         });
       } else {
         setProfile({
@@ -70,7 +60,7 @@ export const useSupabaseAuth = () => {
         });
       }
     } catch (err) {
-      console.error('Error fetching user profile:', err);
+      console.error('Error fetching user role:', err);
       setProfile({
         user_id: userId,
         email: userEmail,
